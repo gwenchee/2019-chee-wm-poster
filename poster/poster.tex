@@ -62,7 +62,6 @@
 
 \usepackage{graphicx}  % Required for including images
 \newcommand{\Cyclus}{\textsc{Cyclus}\xspace}%
-
 \usepackage{tabularx}
 \newcolumntype{b}{X}
 \newcolumntype{s}{>{\hsize=.5\hsize}X}
@@ -72,7 +71,7 @@
 \usepackage{booktabs} % Top and bottom rules for tables
 \usepackage{xspace}
 \usepackage{amsmath}
-\usepackage{bigints}
+\usepackage{exscale}
 
 \setbeamertemplate{bibliography item}[text]
 
@@ -80,13 +79,24 @@
 %	TITLE SECTION 
 %----------------------------------------------------------------------------------------
 
-\title{
-	\includegraphics[width=0.3\linewidth]{UIUC_Logo}
-	\vspace{2cm}
-	\hspace{50cm}
-	\vspace{1cm}
-	Simulation of Spent Nuclear Fuel loading into a Final Waste Repository
-} % Poster title
+\title{%
+  \texorpdfstring{%
+    \makebox[\linewidth]{%
+      \makebox[0pt][l]{%
+        \raisebox{\dimexpr-\height+\baselineskip}[0pt][0pt]
+          {\includegraphics[height=2.5\baselineskip]{UIUC_Logo}}% Left logo
+      }\hfill
+      \makebox[0pt]{Simulation of Spent Nuclear Fuel loading}%
+      \hfill\makebox[0pt][r]{%
+        \raisebox{\dimexpr-\height+\baselineskip}[0pt][0pt]
+          {\includegraphics[height=3.3\baselineskip]{arfc_atom}}% Right logo
+      }%
+    }%
+  }
+  {Simulation of Spent Nuclear Fuel loading}
+  {into a Final Waste Repository}
+  {\vspace{1cm}}
+  } % Poster title
 
 \author{\textbf{Gwendolyn J. Chee}, Kathryn D. Huff}
 \institute{University of Illinios at Urbana-Champaign, Department of Nuclear, Plasma, and Radiological Engineering, Urbana, IL 61801}
@@ -109,46 +119,52 @@
 \begin{column}{\onecolwid} % The first column
 
 %----------------------------------------------------------------------------------------
+%	MOTIVATION
+%----------------------------------------------------------------------------------------
+
+\begin{block}{Introduction}
+
+\textbf{Previous Work}
+
+Previous work towards studying repository loading have used: 
+\begin{itemize}
+	\item \gls{SNF} with an \textbf{average burnup composition} 
+	    \cite{greenberg_application_2012,johnson_optimizing_2016}
+	\item a \textbf{lumped capacitance thermal model} for calculating temperature 
+	      in a \Cyclus repository model \cite{huff_rapid_2017}
+\end{itemize}
+
+\vspace{0.7em}
+\textbf{Motivation}
+
+The goal of this work is to improve on the repository models 
+and use U.S. historical SNF inventory data in simulations 
+to more accurately study the loading of a waste repository. 
+
+These goals will be achieved by: 
+\begin{itemize}
+\item using UNF-ST$\&$DARDS \gls{UDB} \cite{peterson_unf_standards_2017} that has 
+\textbf{historic assembly-specific data} (e.g, isotopic composition, heat) in \Cyclus simulations 
+\item implementing a \textbf{more accurate thermal model} within a \Cyclus repository model 
+\end{itemize}
+
+\end{block}
+
+%----------------------------------------------------------------------------------------
 %	OBJECTIVES
 %----------------------------------------------------------------------------------------
 \setbeamercolor{block alerted title}{fg=black,bg=norange} % Change the alert block title colors
 \setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
 \begin{alertblock}{Objectives}
 \begin{itemize}
-        \item Create a \Cyclus Waste Conditioning Model that packages spent fuel 
+        \item Create a \Cyclus spent fuel conditioning model that packages spent fuel 
         bundles into packages which have user-defined properties. 
-		\item Create a \Cyclus Medium-Fidelity Repository Model that gives accurate 
+		\item Create a \Cyclus medium-fidelity repository model that gives accurate 
 		time and spatial dependent temperature values and loads the repository
 		based on a user-selected loading strategy. 
 \end{itemize}
 
 \end{alertblock}
-
-%----------------------------------------------------------------------------------------
-%	MOTIVATION
-%----------------------------------------------------------------------------------------
-
-\begin{block}{Motivation}
-Previous work in studying repository loading have used \gls{SNF} 
-with an average burn up composition \cite{johnson_optimizing_2016} 
-to evaluate the heat load in the repository \cite{greenberg_application_2012}.
-This work aims to use \textbf{U.S. historical SNF inventory data} 
-\cite{peterson_unf_standards_2017} in various simulations to study how 
-waste acceptance strategies impact repository loading.
-
-The \gls{UDB} contains assembly-specific data including initial enrichment, 
-burnup, \gls{MTHM}, assembly type and discharge date \cite{peterson_fuel_2015}. 
-Irradiation and decay calculations using SCALE \cite{bowman_scale_2011} were 
-performed on each spent fuel assembly based on the collected data to obtain 
-mass, heat, activity and isotopic composition for each assembly 
-\cite{peterson_additional_2017}. 
-
-This data is inputted into \Cyclus using the UDB reactor agent \cite{}. 
-\Cyclus is capable of tracking discrete isotopes and their time-dependent decay. 
-We can use these capabilities to more accurately study the dynamic loading 
-of a waste repository. 
-
-\end{block}
 
 %----------------------------------------------------------------------------------------
 %	Cyclus
@@ -158,11 +174,7 @@ of a waste repository.
 \Cyclus is an agent-based extensible framework for modeling flow of material 
 through user-defined nuclear fuel cycles \cite{huff_fundamental_2016}. 
 In \Cyclus, each facility in the fuel cycle is modeled individually 
-and they interact with one another as independent \textit{agents}. 
-The goal of this work is to develop a waste conditioning \textit{facility agent} 
-and a waste repository \textit{facility agent} to provide \Cyclus with 
-the capabilities to run simulations to study how waste acceptance 
-strategies impact repository loading. 
+and the facilities interact with one another as independent \textit{agents}. 
 \begin{figure}
 	\includegraphics[width=0.9\linewidth]{Cyclus_graph}
 	\caption{\Cyclus API allows for modular build of simulations \cite{huff_fundamental_2016}}
@@ -170,21 +182,24 @@ strategies impact repository loading.
 
 \end{block}
 
-\begin{block}{Waste Conditioning Model}
-The waste conditioning model accepts spent fuel bundles and puts them into a cylindrical
+\begin{block}{Spent Fuel Conditioning Model}
+The spent fuel conditioning model accepts spent fuel bundles and puts them into a cylindrical
 waste package. 
-The model allows the user to define multiple package material layers and 
-the thermal conductivity and diffusivity of each layer. 
 	
-In the waste conditioning model, the user can define the variables:  
-	\begin{itemize}
-		\item Number of spent fuel bundles in each package 
-		\item Radius of each package material layer
-		\item Thermal Conductivity of each package material layer 
-		\item Thermal Diffusivity of each package material layer
-		\item Radius and height of package
-	\end{itemize}
-	
+In the spent fuel conditioning model, the user can define variables:  
+
+For each layer, 
+\begin{itemize}
+	\item radius 
+	\item thermal conductivity 
+	\item thermal diffusivity
+\end{itemize}
+For each package,
+\begin{itemize}
+	\item Number of spent fuel bundles
+	\item Radius and height
+\end{itemize}
+
 \end{block}
 
 %----------------------------------------------------------------------------------------
@@ -203,19 +218,14 @@ In the waste conditioning model, the user can define the variables:
 
 \begin{block}{Waste Repository Model}
 The waste repository model accepts waste packages and emplaces them into 
-available positions within the waste repository based on a thermal criteria. 
-If the thermal criteria is not met, the waste package will be placed into a buffer 
-until it meets the thermal criteria. 
-The thermal criteria is a defined temperature limit at the interface between waste 
+available positions within the waste repository based on a thermal criteria.  
+The thermal criteria is a temperature limit at the interface between the waste 
 package surface and the host geology, that is set based on the repository's host geology.
-
-Table \ref{tab:temp_limit} shows the temperature limits, thermal conductivity 
-and thermal diffusivity for the host geology included in this study. 
 
 \begin{table}[]
 	\label{tab:temp_limit}
-	\caption{Temperature limit at interface between waste package surface 
-	and each host geology \cite{sutton_investigations_2011}}
+	\caption{Temperature limit at waste package surface, thermal conductivity 
+	and thermal diffusivity for each host geology \cite{sutton_investigations_2011}}
 	\begin{tabular}{|l|l|l|l|}
 	\hline
 	Rock Type & $T_{limit}$ [$^\circ$C] & k [$\frac{W}{mK}$] &  $\alpha$ [$\frac{m^2}{s}$]  \\ \hline
@@ -227,45 +237,48 @@ and thermal diffusivity for the host geology included in this study.
 
 In the waste repository model, the user can define the variables: 
 	\begin{itemize}
+		\item Capacity
 		\item Distance between waste packages
 		\item Distance between drifts 
 		\item Repository host geology 
 		\item Loading Strategy 
 	\end{itemize}
 
+\vspace{0.7em}
 \textbf{Thermal Model}
 
-At each time step, the waste repository model recalculates the temperature at each 
-location in the repository after the addition of new waste packages. 
-If the addition of this new package results in its temperature being over the thermal 
-limit, it will be placed back into the buffer.  
-To accurately determine the temperature in the repository, a thermal model that 
-relies on a transient 'outside' model and quasi-steady-state 'inside' model is used
+After the addition of new waste packages at each time step, the waste repository model 
+recalculates the temperature at each location in the repository. 
+If the addition of this new package causes its temperature to exceed the thermal 
+limit, it will be placed back into the buffer. 
+A thermal model that relies on a transient `outside' model and quasi-steady-state 
+`inside' model is used to accurately determine the temperature in the repository
 \cite{sutton_investigations_2011}. 
 
-\textbf{Transient Outside Model}
+\vspace{0.7em}
+\textbf{Transient `Outside' Model}
 
-The outside model assumes a homogenous medium with the \gls{EBS} replaced by the 
+The `outside' model assumes a homogenous medium with the \gls{EBS} replaced by the 
 geologic medium. 
 Figure \ref{fig:conceptual_layout} shows the conceptual layout of the central waste 
 package and the adjacent point and line sources. 
 
 \begin{figure}
 	\label{fig:conceptual_layout}
-	\includegraphics[width=0.9\linewidth]{outsidemodel}
-	\caption{Outside Model: Conceptual layout of the central waste package, its adjacent
+	\includegraphics[width=1\linewidth]{outsidemodel}
+	\caption{`Outside' Model: Conceptual layout of the central waste package, its adjacent
 	point sources and adjacent line sources \cite{sutton_investigations_2011}}
 \end{figure}
 
 Temperature solutions for the central waste package, adjacent point and line sources 
 are superimposed to calculate the temperature at specific points in the repository.
 The equations for calculating temperature of each contributing component 
-are included below \cite{sutton_investigations_2011}. 
+are included below \cite{sutton_investigations_2011,greenberg_application_2012,huff_numerical_2012}. 
 
 The central drift consists of one finite line source which represents the central 
-waste package. 
+waste package.
 \begin{align*}
-	T_{line}(t,x,y,z) &= \frac{1}{8 \pi k}  \int_{0}^{t} \frac{q_L(t')}{t-t'}e^{\frac{-(x^2+z^2)}{4\alpha(t-t')}} \\
+	T_{line}(t,x,y,z) &= \frac{1}{8 \pi k}  \int _{0}^{t} \frac{q_L(t')}{t-t'}e^{\frac{-(x^2+z^2)}{4\alpha(t-t')}} \\
 	&[erf[\frac{1}{2}\frac{y+L/2}{\sqrt{\alpha(t-t')}}]-erf[\frac{1}{2}\frac{y-L/2}{\sqrt{\alpha(t-t')}}]] dt'
 \end{align*}
 The central drift also consists of point sources that represent neighboring 
@@ -290,14 +303,14 @@ The neighboring drifts are represented by infinite line sources.
 \begin{column}{\onecolwid} % The third column
 
 \begin{block}{Waste Repository Model}
-\textbf{Quasi-steady-state 'inside' model}
+\textbf{Quasi-Steady-State `Inside' Model}
 
-The inside model is considered to be at a quasi-steady-state condition since there is 
-relatively low thermal mass of \gls{EBS} compared to the infinite geologic medium 
+The `inside' model is considered to be at a quasi-steady-state condition because \gls{EBS}
+has a relatively low thermal mass compared to the infinite geologic medium 
 \cite{sutton_investigations_2011}. 
 The steady state calculation is performed at each time step with the heat source and 
 interface temperature as boundary conditions. 
-Figure \ref{fig:ebs_layers} shows an example of an \gls{EBS} layout.
+Figure \ref{fig:ebs_layers} illustrates an \gls{EBS} layout.
 
 \begin{figure}
 	\label{fig:ebs_layers}
@@ -308,14 +321,15 @@ Figure \ref{fig:ebs_layers} shows an example of an \gls{EBS} layout.
 \end{block}
 
 
-\begin{block}{Loading Strategies}
-Loading strategies that will be studied: 
+\setbeamercolor{block alerted title}{fg=black,bg=norange} % Change the alert block title colors
+\setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
+\begin{alertblock}{Future Work }
 \begin{itemize}
-	\item First-in-first-out
-	\item Last-in-first-out
-	\item Load \gls{SNF} from shutdown sites first \cite{petersen_determining_2017}
+		\item Run \Cyclus simulations with U.S. historical SNF inventory data, the spent fuel conditioning 
+		and repository models to study how waste package acceptance strategies impact repository loading
 \end{itemize}
-\end{block}
+
+\end{alertblock}
 
 
 %----------------------------------------------------------------------------------------
@@ -326,9 +340,10 @@ Loading strategies that will be studied:
 
 \begin{block}{Acknowledgements}
 	
-	This research is being performed using funding received from the DOE Office
-	of Nuclear Energy's NEUP
-	(Project 16-10512) 'Demand-Driven Cycamore Archetypes'.
+	This research is being performed using funding received from 
+	the DOE Office of Nuclear Energy's Nuclear Energy University 
+	Program (Project 16-10512, DE-NE0008567) 'Demand-Driven Cycamore 
+	Archetypes'.
 	
 	
 \end{block}
@@ -337,10 +352,16 @@ Loading strategies that will be studied:
 %	CONTACT INFORMATION
 %----------------------------------------------------------------------------------------
 
-\setbeamercolor{block alerted title}{fg=black,bg=norange} % Change the alert block title colors
+\setbeamercolor{block alerted title}{fg=white,bg=dblue} % Change the alert block title colors
 \setbeamercolor{block alerted body}{fg=black,bg=white} % Change the alert block body colors
 
-
+\begin{alertblock}{Contact Information}
+	\setbeamercolor{block title}{fg=norange,bg=white} % Change the block title color
+	\begin{itemize}
+		\item Email: \href{mailto:gchee2@illinois.edu}{gchee2@illinois.edu}
+	\end{itemize}
+	
+\end{alertblock}
 
 \begin{block}{References}
 

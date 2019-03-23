@@ -28,7 +28,7 @@ fc-diagram.pdf :
 	dvipdf fc-diagram
 
 clean:
-	rm -f *.nav *.snm *.fls *.fdb_latexmk *.pdf *.dvi *.toc *.aux *.out *.log *.bbl *.blg *.log *.spl *~ *.spl *.zip *.acn *.glo *.ist *.epub
+	rm -f *.nav *.synctex.gz *.snm *.fls *.fdb_latexmk *.pdf *.dvi *.toc *.aux *.out *.log *.bbl *.blg *.log *.spl *~ *.spl *.zip *.acn *.glo *.ist *.epub
 
 realclean: clean
 	rm -rf $(manuscript).dvi
